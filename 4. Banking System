@@ -1,0 +1,130 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <iomanip>
+
+using namespace std;
+
+class Customer {
+public:
+    string name;
+    string address;
+    string phoneNumber;
+
+    Customer(string name, string address, string phoneNumber) {
+        this->name = name;
+        this->address = address;
+        this->phoneNumber = phoneNumber;
+    }
+};
+
+class Account {
+public:
+    string accountNumber;
+    Customer* customer;
+    double balance;
+
+    Account(string accountNumber, Customer* customer, double balance) {
+        this->accountNumber = accountNumber;
+        this->customer = customer;
+        this->balance = balance;
+    }
+
+    void deposit(double amount) {
+        balance += amount;
+    }
+
+    bool withdraw(double amount) {
+        if (balance >= amount) {
+            balance -= amount;
+            return true;
+        }
+        return false;
+    }
+};
+
+class Transaction {
+public:
+    string transactionId;
+    Account* account;
+    double amount;
+    string type;
+
+    Transaction(string transactionId, Account* account, double amount, string type) {
+        this->transactionId = transactionId;
+        this->account = account;
+        this->amount = amount;
+        this->type = type;
+    }
+};
+
+class Bank {
+public:
+    vector<Customer*> customers;
+    vector<Account*> accounts;
+    vector<Transaction*> transactions;
+
+    Customer* createCustomer(string name, string address, string phoneNumber) {
+        Customer* customer = new Customer(name, address, phoneNumber);
+        customers.push_back(customer);
+        return customer;
+    }
+
+    Account* createAccount(string accountNumber, Customer* customer, double initialBalance) {
+        Account* account = new Account(accountNumber, customer, initialBalance);
+        accounts.push_back(account);
+        return account;
+    }
+
+    void deposit(Account* account, double amount) {
+        account->deposit(amount);
+        transactions.push_back(new Transaction("D-" + to_string(transactions.size() + 1), account, amount, "Deposit"));
+    }
+
+    bool withdraw(Account* account, double amount) {
+        if (account->withdraw(amount)) {
+            transactions.push_back(new Transaction("W-" + to_string(transactions.size() + 1), account, amount, "Withdrawal"));
+            return true;
+        }
+        return false;
+    }
+
+    void transfer(Account* fromAccount, Account* toAccount, double amount) {
+        if (fromAccount->withdraw(amount)) {
+            toAccount->deposit(amount);
+            transactions.push_back(new Transaction("T-" + to_string(transactions.size() + 1), fromAccount, amount, "Transfer to " + toAccount->accountNumber));
+        }
+    }
+
+    void viewAccountDetails(Account* account) {
+        cout << "\nAccount Details:\n";
+        cout << "Account Number: " << account->accountNumber << endl;
+        cout << "Customer Name: " << account->customer->name << endl;
+        cout << "Balance: " << fixed << setprecision(2) << account->balance << endl;
+        cout << "\nRecent Transactions:\n";
+        for (Transaction* transaction : transactions) {
+            if (transaction->account->accountNumber == account->accountNumber) {
+                cout << transaction->transactionId << ": " << transaction->type << " - " << fixed << setprecision(2) << transaction->amount << endl;
+            }
+        }
+    }
+};
+
+int main() {
+    Bank bank;
+
+    Customer* customer1 = bank.createCustomer("John Doe", "123 Main St", "555-1234");
+    Account* account1 = bank.createAccount("A-001", customer1, 1000);
+
+    Customer* customer2 = bank.createCustomer("Jane Smith", "456 Oak Ave", "555-5678");
+    Account* account2 = bank.createAccount("A-002", customer2, 500);
+
+    bank.deposit(account1, 500);
+    bank.withdraw(account1, 200);
+    bank.transfer(account1, account2, 300);
+
+    bank.viewAccountDetails(account1);
+    bank.viewAccountDetails(account2);
+
+    return 0;
+}
